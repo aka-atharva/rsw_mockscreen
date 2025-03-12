@@ -115,13 +115,19 @@ async def create_user(
     validate_role(user_data["role"], db)
     
     # Create new user
+    from datetime import datetime
+    import pytz
+
     hashed_password = User.get_password_hash(user_data["password"])
+    ist = pytz.timezone('Asia/Kolkata')
+    now = datetime.now(ist)
     new_user = User(
         username=user_data["username"],
         email=user_data["email"],
         hashed_password=hashed_password,
         role=user_data["role"],
-        is_active=user_data.get("is_active", True)
+        is_active=user_data.get("is_active", True),
+        created_at=now
     )
     db.add(new_user)
     db.commit()

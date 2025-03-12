@@ -7,6 +7,7 @@ import { useAdminStore } from "@/lib/admin/store"
 import { EditUserDialog } from "@/components/admin/dialogs/edit-user-dialog"
 import { DeleteUserDialog } from "@/components/admin/dialogs/delete-user-dialog"
 import { AddUserDialog } from "@/components/admin/dialogs/add-user-dialog"
+import { formatDate } from "@/lib/utils/date-formatter"
 
 export function UsersTab() {
   const { users } = useAdminStore()
@@ -80,7 +81,7 @@ export function UsersTab() {
                   </span>
                 </td>
                 <td className="p-3 text-muted-foreground">
-                  {user.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A"}
+                  {user.created_at ? formatDate(user.created_at, false) : "N/A"}
                 </td>
                 <td className="p-3">
                   <div className="flex space-x-2">

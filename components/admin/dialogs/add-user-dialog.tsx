@@ -42,6 +42,10 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
     try {
       const addedUser = await createUser(newUser)
 
+      // Ensure created_at is set
+      if (!addedUser.created_at) {
+        addedUser.created_at = new Date().toISOString()
+      }
       // Update users list
       setUsers([...users, addedUser])
 

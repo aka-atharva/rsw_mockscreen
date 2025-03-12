@@ -5,7 +5,7 @@ export async function fetchAdminData() {
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL
       }
-      return "http://localhost:9595/api"
+      return "http://localhost:8080/api"
     }
 
     const apiUrl = getApiUrl()
@@ -155,7 +155,7 @@ export async function createUser(userData) {
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL
       }
-      return "http://localhost:9595/api"
+      return "http://localhost:8080/api"
     }
 
     const apiUrl = getApiUrl()
@@ -190,7 +190,7 @@ export async function updateUser(userId, userData) {
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL
       }
-      return "http://localhost:9595/api"
+      return "http://localhost:8080/api"
     }
 
     const apiUrl = getApiUrl()
@@ -225,7 +225,7 @@ export async function deleteUser(userId) {
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL
       }
-      return "http://localhost:9595/api"
+      return "http://localhost:8080/api"
     }
 
     const apiUrl = getApiUrl()
@@ -259,7 +259,7 @@ export async function updateSystemSetting(setting, value) {
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL
       }
-      return "http://localhost:9595/api"
+      return "http://localhost:8080/api"
     }
 
     const apiUrl = getApiUrl()
@@ -294,7 +294,7 @@ export async function runBackup() {
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL
       }
-      return "http://localhost:9595/api"
+      return "http://localhost:8080/api"
     }
 
     const apiUrl = getApiUrl()
@@ -328,7 +328,7 @@ export async function exportData() {
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL
       }
-      return "http://localhost:9595/api"
+      return "http://localhost:8080/api"
     }
 
     const apiUrl = getApiUrl()
@@ -362,7 +362,7 @@ export async function clearActivityLogs(days) {
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL
       }
-      return "http://localhost:9595/api"
+      return "http://localhost:8080/api"
     }
 
     const apiUrl = getApiUrl()
@@ -396,7 +396,7 @@ export async function cleanupData() {
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL
       }
-      return "http://localhost:9595/api"
+      return "http://localhost:8080/api"
     }
 
     const apiUrl = getApiUrl()
