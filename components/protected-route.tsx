@@ -32,7 +32,11 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
       }
     } else if (!isLoading && user && requiredRole) {
       // Check role permissions
-      if (
+      if (user.role === "admin") {
+        // Admin has access to everything, no need to redirect
+      }
+      // Check specific role permissions
+      else if (
         (requiredRole === "admin" && user.role !== "admin") ||
         (requiredRole === "researcher" && !["admin", "researcher"].includes(user.role))
       ) {
@@ -55,6 +59,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   if (
     requiredRole &&
     user &&
+    user.role !== "admin" && // Admin can access everything
     ((requiredRole === "admin" && user.role !== "admin") ||
       (requiredRole === "researcher" && !["admin", "researcher"].includes(user.role)))
   ) {

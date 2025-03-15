@@ -94,7 +94,7 @@ export async function fetchAdminData() {
           email: "admin@example.com",
           role: "admin",
           is_active: true,
-          created_at: "2023-01-01T00:00:00",
+          created_at: new Date().toISOString(), // Update to current date
         },
         {
           id: 2,
@@ -102,7 +102,7 @@ export async function fetchAdminData() {
           email: "researcher@example.com",
           role: "researcher",
           is_active: true,
-          created_at: "2023-01-02T00:00:00",
+          created_at: new Date(Date.now() - 24 * 60 * 60000).toISOString(), // 1 day ago
         },
         {
           id: 3,
@@ -110,7 +110,7 @@ export async function fetchAdminData() {
           email: "user@example.com",
           role: "user",
           is_active: true,
-          created_at: "2023-01-03T00:00:00",
+          created_at: new Date(Date.now() - 48 * 60 * 60000).toISOString(), // 2 days ago
         },
       ],
       activity: [
@@ -177,7 +177,12 @@ export async function createUser(userData) {
       throw new Error(errorData.detail || "Failed to create user")
     }
 
-    return await response.json()
+    const newUser = await response.json()
+    // Ensure created_at is set if not provided by the API
+    if (!newUser.created_at) {
+      newUser.created_at = new Date().toISOString()
+    }
+    return newUser
   } catch (error) {
     console.error("Error creating user:", error)
     throw error

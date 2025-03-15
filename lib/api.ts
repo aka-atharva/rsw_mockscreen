@@ -1,431 +1,230 @@
-export async function fetchAdminData() {
-  try {
-    // Get API base URL
-    const getApiUrl = () => {
-      if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL
-      }
-      return "http://localhost:8000/api"
+// API base URL - change this to your FastAPI server URL in production
+const getApiBaseUrl = () => {
+  // Use the environment variable if available
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    // If we're running in the browser and the URL is relative (starts with /)
+    // then use the current origin
+    if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_API_URL.startsWith("/")) {
+      return `${window.location.origin}${process.env.NEXT_PUBLIC_API_URL}`
     }
+    return process.env.NEXT_PUBLIC_API_URL
+  }
 
-    const apiUrl = getApiUrl()
-    const token = localStorage.getItem("token")
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }
+  // Default fallback
+  return "http://localhost:8080/api"
+}
 
-    // Fetch system stats
-    const statsResponse = await fetch(`${apiUrl}/admin/stats`, { headers })
+const API_BASE_URL = getApiBaseUrl()
 
-    // Fetch users
-    const usersResponse = await fetch(`${apiUrl}/admin/users`, { headers })
-
-    // Fetch activity logs with a timestamp parameter to avoid caching
-    let activityData = []
-    try {
-      const timestamp = new Date().getTime()
-      const activityResponse = await fetch(`${apiUrl}/admin/activity?limit=50&_t=${timestamp}`, { headers })
-      if (!activityResponse.ok) {
-        throw new Error(`Failed to fetch activity logs: ${activityResponse.statusText}`)
-      }
-      activityData = await activityResponse.json()
-
-      // Log the activity data for debugging
-      console.log("Fetched activity data:", activityData)
-
-      // Ensure all activities have a valid username
-      activityData = activityData.map((item) => ({
-        ...item,
-        username: item.username || "anonymous",
-      }))
-    } catch (err) {
-      console.error("Error fetching activity logs:", err)
-      // Fallback data
-      activityData = [
-        {
-          id: 1,
-          action: "User login",
-          username: "admin", // Use a real username instead of "system"
-          timestamp: new Date().toISOString(),
-          details: "Activity log system initialized with fallback data",
-          page_url: null,
-        },
-      ]
-    }
-
-    // Fetch system settings
-    const settingsResponse = await fetch(`${apiUrl}/admin/settings`, { headers })
-
-    // Check if responses are OK
-    if (!statsResponse.ok || !usersResponse.ok || !settingsResponse.ok) {
-      throw new Error("Failed to fetch admin data")
-    }
-
-    // Parse responses
-    const statsData = await statsResponse.json()
-    const usersData = await usersResponse.json()
-    const settingsData = await settingsResponse.json()
-
-    return {
-      stats: statsData,
-      users: usersData,
-      activity: activityData,
-      systemSettings: settingsData,
-    }
-  } catch (err) {
-    console.error("Error fetching admin data:", err)
-
-    // Return mock data as fallback
-    return {
-      stats: {
-        total_users: 42,
-        active_users: 38,
-        researchers: 15,
-        regular_users: 26,
-        system_uptime: "3 days, 7 hours",
-        database_size: "42.5 MB",
-      },
-      users: [
-        {
-          id: 1,
-          username: "admin",
-          email: "admin@example.com",
-          role: "admin",
-          is_active: true,
-          created_at: new Date().toISOString(), // Update to current date
-        },
-        {
-          id: 2,
-          username: "researcher",
-          email: "researcher@example.com",
-          role: "researcher",
-          is_active: true,
-          created_at: new Date(Date.now() - 24 * 60 * 60000).toISOString(), // 1 day ago
-        },
-        {
-          id: 3,
-          username: "user",
-          email: "user@example.com",
-          role: "user",
-          is_active: true,
-          created_at: new Date(Date.now() - 48 * 60 * 60000).toISOString(), // 2 days ago
-        },
+// Mock data for fallback when API is unavailable
+const MOCK_DATA = {
+  kgraphDashboard: {
+    graph: {
+      nodes: [
+        { id: 1, label: "Person A", type: "Person", color: "#8B5CF6", x: 150, y: 100 },
+        { id: 2, label: "Person B", type: "Person", color: "#8B5CF6", x: 250, y: 150 },
+        { id: 3, label: "Organization X", type: "Organization", color: "#EC4899", x: 100, y: 200 },
+        { id: 4, label: "Location Y", type: "Location", color: "#3B82F6", x: 200, y: 250 },
+        { id: 5, label: "Event Z", type: "Event", color: "#10B981", x: 300, y: 100 },
       ],
-      activity: [
-        {
-          id: 1,
-          action: "Login",
-          username: "admin", // Use a real username instead of "system"
-          timestamp: new Date().toISOString(),
-          details: "User admin logged in successfully",
-          page_url: null,
-        },
-        {
-          id: 2,
-          action: "Page visit",
-          username: "researcher",
-          timestamp: new Date(Date.now() - 15 * 60000).toISOString(), // 15 minutes ago
-          details: "Visited dashboard page",
-          page_url: "/datapuur/dashboard",
-        },
-        {
-          id: 3,
-          action: "Failed login attempt",
-          username: "unknown",
-          timestamp: new Date(Date.now() - 30 * 60000).toISOString(), // 30 minutes ago
-          details: "Invalid credentials",
-          page_url: null,
-        },
+      edges: [
+        { id: 1, from_node: 1, to_node: 2, label: "knows" },
+        { id: 2, from_node: 1, to_node: 3, label: "works at" },
+        { id: 3, from_node: 2, to_node: 4, label: "lives in" },
+        { id: 4, from_node: 3, to_node: 5, label: "hosts" },
+        { id: 5, from_node: 4, to_node: 5, label: "location of" },
       ],
-      systemSettings: {
-        maintenance_mode: false,
-        debug_mode: true,
-        api_rate_limiting: true,
-        last_backup: new Date(Date.now() - 24 * 60 * 60000).toISOString(), // 1 day ago
+    },
+    metrics: {
+      total_nodes: 1245,
+      total_edges: 3872,
+      density: 0.68,
+      avg_degree: 6.2,
+    },
+    updates: [
+      { action: "Graph updated", time: "Today at 11:30 AM" },
+      { action: "New nodes added", time: "Yesterday at 3:45 PM" },
+      { action: "Relationships modified", time: "2 days ago at 9:20 AM" },
+      { action: "Data source connected", time: "3 days ago at 2:15 PM" },
+    ],
+  },
+  dataDashboard: {
+    metrics: {
+      total_records: 35000,
+      processed_records: 8500,
+      failed_records: 120,
+      processing_time: 5.7,
+    },
+    recent_activities: [
+      { id: "1", action: "Data import completed", time: "10 minutes ago", status: "success" },
+      { id: "2", action: "Transformation started", time: "25 minutes ago", status: "processing" },
+      { id: "3", action: "Export scheduled", time: "1 hour ago", status: "pending" },
+      { id: "4", action: "Data validation failed", time: "2 hours ago", status: "error" },
+    ],
+    chart_data: {
+      bar_chart: [40, 70, 30, 80, 60, 50, 65],
+      pie_chart: [
+        { label: "Type A", value: 45, color: "#8B5CF6" },
+        { label: "Type B", value: 30, color: "#EC4899" },
+        { label: "Type C", value: 15, color: "#3B82F6" },
+        { label: "Type D", value: 10, color: "#10B981" },
+      ],
+      line_chart: {
+        current: [40, 60, 45, 70, 55, 65],
+        previous: [30, 50, 40, 60, 45, 55],
       },
-    }
-  }
+    },
+  },
 }
 
-export async function createUser(userData) {
+// Generic fetch function with error handling and fallback
+async function fetchAPI<T>(endpoint: string, useFallback = true): Promise<T> {
   try {
-    const getApiUrl = () => {
-      if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL
-      }
-      return "http://localhost:8000/api"
-    }
+    console.log(`Fetching from: ${API_BASE_URL}${endpoint}`)
 
-    const apiUrl = getApiUrl()
-    const token = localStorage.getItem("token")
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }
-
-    const response = await fetch(`${apiUrl}/admin/users`, {
-      method: "POST",
-      headers: headers,
-      body: JSON.stringify(userData),
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      // Include credentials if your API requires authentication
+      // credentials: 'include',
     })
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.detail || "Failed to create user")
+    // Check if the response is JSON
+    const contentType = response.headers.get("content-type")
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await response.text()
+      console.error("Received non-JSON response:", text.substring(0, 200) + "...")
+      throw new Error("Server returned non-JSON response")
     }
 
-    const newUser = await response.json()
-    // Ensure created_at is set if not provided by the API
-    if (!newUser.created_at) {
-      newUser.created_at = new Date().toISOString()
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`)
     }
-    return newUser
+
+    return (await response.json()) as T
   } catch (error) {
-    console.error("Error creating user:", error)
+    console.error(`Error fetching ${endpoint}:`, error)
+
+    // If fallback is enabled and we have mock data for this endpoint
+    if (useFallback) {
+      console.log(`Using fallback data for ${endpoint}`)
+      if (endpoint === "/kginsights/dashboard") {
+        return MOCK_DATA.kgraphDashboard as unknown as T
+      } else if (endpoint === "/datapuur/dashboard") {
+        return MOCK_DATA.dataDashboard as unknown as T
+      }
+    }
+
     throw error
   }
 }
 
-export async function updateUser(userId, userData) {
-  try {
-    const getApiUrl = () => {
-      if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL
-      }
-      return "http://localhost:8000/api"
+// DataPuur API calls
+export async function getDataSources() {
+  return fetchAPI("/datapuur/sources")
+}
+
+export async function getDataMetrics() {
+  return fetchAPI("/datapuur/metrics")
+}
+
+export async function getActivities() {
+  return fetchAPI("/datapuur/activities")
+}
+
+export async function getDashboardData() {
+  return fetchAPI("/datapuur/dashboard")
+}
+
+export async function getInjectionHistory() {
+  return fetchAPI("/datapuur/injection-history")
+}
+
+// KGInsights API calls
+export async function getGraphData() {
+  return fetchAPI("/kginsights/graph")
+}
+
+export async function getGraphMetrics() {
+  return fetchAPI("/kginsights/metrics")
+}
+
+export async function getGraphUpdates() {
+  return fetchAPI("/kginsights/updates")
+}
+
+export async function getKGraphDashboard() {
+  return fetchAPI("/kginsights/dashboard")
+}
+
+// Types
+export interface DataSource {
+  id: string
+  name: string
+  type: string
+  last_updated: string
+  status: string
+}
+
+export interface DataMetrics {
+  total_records: number
+  processed_records: number
+  failed_records: number
+  processing_time: number
+}
+
+export interface Activity {
+  id: string
+  action: string
+  time: string
+  status: string
+}
+
+export interface GraphNode {
+  id: number
+  label: string
+  type: string
+  color: string
+  x: number
+  y: number
+}
+
+export interface GraphEdge {
+  id: number
+  from_node: number
+  to_node: number
+  label: string
+}
+
+export interface GraphMetrics {
+  total_nodes: number
+  total_edges: number
+  density: number
+  avg_degree: number
+}
+
+export interface DashboardData {
+  metrics: DataMetrics
+  recent_activities: Activity[]
+  chart_data: {
+    bar_chart: number[]
+    pie_chart: { label: string; value: number; color: string }[]
+    line_chart: {
+      current: number[]
+      previous: number[]
     }
-
-    const apiUrl = getApiUrl()
-    const token = localStorage.getItem("token")
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }
-
-    const response = await fetch(`${apiUrl}/admin/users/${userId}`, {
-      method: "PUT",
-      headers: headers,
-      body: JSON.stringify(userData),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.detail || "Failed to update user")
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error("Error updating user:", error)
-    throw error
   }
 }
 
-export async function deleteUser(userId) {
-  try {
-    const getApiUrl = () => {
-      if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL
-      }
-      return "http://localhost:8000/api"
-    }
-
-    const apiUrl = getApiUrl()
-    const token = localStorage.getItem("token")
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }
-
-    const response = await fetch(`${apiUrl}/admin/users/${userId}`, {
-      method: "DELETE",
-      headers: headers,
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.detail || "Failed to delete user")
-    }
-
-    return
-  } catch (error) {
-    console.error("Error deleting user:", error)
-    throw error
+export interface KGraphDashboard {
+  graph: {
+    nodes: GraphNode[]
+    edges: GraphEdge[]
   }
-}
-
-export async function updateSystemSetting(setting, value) {
-  try {
-    const getApiUrl = () => {
-      if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL
-      }
-      return "http://localhost:8000/api"
-    }
-
-    const apiUrl = getApiUrl()
-    const token = localStorage.getItem("token")
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }
-
-    const response = await fetch(`${apiUrl}/admin/settings`, {
-      method: "PUT",
-      headers: headers,
-      body: JSON.stringify({ [setting]: value }),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.detail || "Failed to update system setting")
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error("Error updating system setting:", error)
-    throw error
-  }
-}
-
-export async function runBackup() {
-  try {
-    const getApiUrl = () => {
-      if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL
-      }
-      return "http://localhost:8000/api"
-    }
-
-    const apiUrl = getApiUrl()
-    const token = localStorage.getItem("token")
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }
-
-    const response = await fetch(`${apiUrl}/admin/backup`, {
-      method: "POST",
-      headers: headers,
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.detail || "Failed to run backup")
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error("Error running backup:", error)
-    throw error
-  }
-}
-
-export async function exportData() {
-  try {
-    const getApiUrl = () => {
-      if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL
-      }
-      return "http://localhost:8000/api"
-    }
-
-    const apiUrl = getApiUrl()
-    const token = localStorage.getItem("token")
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }
-
-    const response = await fetch(`${apiUrl}/admin/export-data`, {
-      method: "POST",
-      headers: headers,
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.detail || "Failed to export data")
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error("Error exporting data:", error)
-    throw error
-  }
-}
-
-export async function clearActivityLogs(days) {
-  try {
-    const getApiUrl = () => {
-      if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL
-      }
-      return "http://localhost:8000/api"
-    }
-
-    const apiUrl = getApiUrl()
-    const token = localStorage.getItem("token")
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }
-
-    const response = await fetch(`${apiUrl}/admin/activity/clear${days ? `?days=${days}` : ""}`, {
-      method: "DELETE",
-      headers: headers,
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.detail || "Failed to clear activity logs")
-    }
-
-    return
-  } catch (error) {
-    console.error("Error clearing activity logs:", error)
-    throw error
-  }
-}
-
-export async function cleanupData() {
-  try {
-    const getApiUrl = () => {
-      if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL
-      }
-      return "http://localhost:8000/api"
-    }
-
-    const apiUrl = getApiUrl()
-    const token = localStorage.getItem("token")
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }
-
-    const response = await fetch(`${apiUrl}/admin/cleanup-data`, {
-      method: "POST",
-      headers: headers,
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.detail || "Failed to cleanup data")
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error("Error cleaning up data:", error)
-    throw error
-  }
+  metrics: GraphMetrics
+  updates: { action: string; time: string }[]
 }
 

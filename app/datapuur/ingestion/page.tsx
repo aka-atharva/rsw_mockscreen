@@ -1,13 +1,25 @@
 "use client"
 
+import { useState } from "react"
 import Navbar from "@/components/navbar"
 import { SparklesCore } from "@/components/sparkles"
 import DataPuurSidebar from "@/components/datapuur-sidebar"
-import { Button } from "@/components/ui/button"
-import { FileUp, Database, LinkIcon } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FileUpload } from "@/components/datapuur/file-upload"
+import { DatabaseConnection } from "@/components/datapuur/database-connection"
+import { SchemaViewer } from "@/components/datapuur/schema-viewer"
+import { ChunkSizeConfig } from "@/components/datapuur/chunk-size-config"
+import { InjectionHistory } from "@/components/datapuur/injection-history"
+import { FileUp, Database, Table, Settings, History } from "lucide-react"
 import { motion } from "framer-motion"
 
 export default function IngestionPage() {
+  const [activeTab, setActiveTab] = useState("file-upload")
+  const [detectedSchema, setDetectedSchema] = useState(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [processingStatus, setProcessingStatus] = useState("")
+  const [chunkSize, setChunkSize] = useState(1000)
+
   // Animation variants
   const container = {
     hidden: { opacity: 0 },
@@ -22,6 +34,18 @@ export default function IngestionPage() {
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 },
+  }
+
+  const handleSchemaDetected = (schema) => {
+    setDetectedSchema(schema)
+  }
+
+  const handleChunkSizeChange = (size) => {
+    setChunkSize(size)
+  }
+
+  const handleProcessingStatusChange = (status) => {
+    setProcessingStatus(status)
   }
 
   return (
@@ -46,7 +70,7 @@ export default function IngestionPage() {
           <DataPuurSidebar />
 
           <div className="flex-1 p-8">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-5xl mx-auto">
               <motion.h1
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -62,66 +86,108 @@ export default function IngestionPage() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="text-muted-foreground text-xl mb-8"
               >
-                Import and collect data from various sources.
+                Import and collect data from various sources for analysis and transformation.
               </motion.p>
 
               <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
-                <motion.div
-                  variants={item}
-                  className="bg-card/80 backdrop-blur-sm p-8 rounded-lg border border-border mb-8 shadow-md hover:shadow-lg transition-shadow duration-300"
-                >
-                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center">
-                    <FileUp className="w-6 h-6 text-primary mr-2" />
-                    Upload Data
-                  </h3>
-                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center bg-background/50">
-                    <motion.div whileHover={{ scale: 1.05 }} className="inline-block">
-                      <FileUp className="w-16 h-16 text-primary mx-auto mb-4" />
-                    </motion.div>
-                    <p className="text-muted-foreground mb-4">Drag and drop files here, or click to browse</p>
-                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">Select Files</Button>
-                  </div>
-                </motion.div>
+                <Tabs defaultValue="file-upload" onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid grid-cols-3 mb-8">
+                    <TabsTrigger value="file-upload" className="flex items-center gap-2">
+                      <FileUp className="h-4 w-4" />
+                      File Upload
+                    </TabsTrigger>
+                    <TabsTrigger value="database" className="flex items-center gap-2">
+                      <Database className="h-4 w-4" />
+                      Database Connection
+                    </TabsTrigger>
+                    <TabsTrigger value="history" className="flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      Injection History
+                    </TabsTrigger>
+                  </TabsList>
 
-                <motion.div
-                  variants={item}
-                  className="bg-card/80 backdrop-blur-sm p-6 rounded-lg border border-border shadow-md hover:shadow-lg transition-shadow duration-300"
-                >
-                  <h3 className="text-xl font-semibold text-foreground mb-4">Data Sources</h3>
-                  <div className="space-y-4">
+                  <TabsContent value="file-upload" className="space-y-6">
                     <motion.div
-                      whileHover={{ x: 5 }}
-                      className="p-4 border border-border rounded-lg flex justify-between items-center bg-gradient-to-r from-primary/5 to-secondary/5"
+                      variants={item}
+                      className="bg-card/80 backdrop-blur-sm p-6 rounded-lg border border-border shadow-md"
                     >
-                      <div className="flex items-center">
-                        <Database className="w-8 h-8 text-primary mr-3" />
-                        <div>
-                          <h4 className="text-foreground font-medium">Database Connection</h4>
-                          <p className="text-muted-foreground text-sm">Connect to SQL, NoSQL, or other databases</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                        Connect
-                      </Button>
+                      <FileUpload
+                        onSchemaDetected={handleSchemaDetected}
+                        isProcessing={isProcessing}
+                        setIsProcessing={setIsProcessing}
+                        chunkSize={chunkSize}
+                        onStatusChange={handleProcessingStatusChange}
+                      />
                     </motion.div>
+                  </TabsContent>
 
+                  <TabsContent value="database" className="space-y-6">
                     <motion.div
-                      whileHover={{ x: 5 }}
-                      className="p-4 border border-border rounded-lg flex justify-between items-center bg-gradient-to-r from-secondary/5 to-primary/5"
+                      variants={item}
+                      className="bg-card/80 backdrop-blur-sm p-6 rounded-lg border border-border shadow-md"
                     >
-                      <div className="flex items-center">
-                        <LinkIcon className="w-8 h-8 text-secondary mr-3" />
-                        <div>
-                          <h4 className="text-foreground font-medium">API Integration</h4>
-                          <p className="text-muted-foreground text-sm">Connect to external APIs</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary/10">
-                        Configure
-                      </Button>
+                      <DatabaseConnection
+                        onSchemaDetected={handleSchemaDetected}
+                        isProcessing={isProcessing}
+                        setIsProcessing={setIsProcessing}
+                        chunkSize={chunkSize}
+                        onStatusChange={handleProcessingStatusChange}
+                      />
                     </motion.div>
-                  </div>
-                </motion.div>
+                  </TabsContent>
+
+                  <TabsContent value="history" className="space-y-6">
+                    <motion.div
+                      variants={item}
+                      className="bg-card/80 backdrop-blur-sm p-6 rounded-lg border border-border shadow-md"
+                    >
+                      <InjectionHistory />
+                    </motion.div>
+                  </TabsContent>
+                </Tabs>
+
+                {/* Processing status */}
+                {processingStatus && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-primary/10 border border-primary rounded-lg p-4 text-primary"
+                  >
+                    {processingStatus}
+                  </motion.div>
+                )}
+
+                {/* Chunk Size Configuration */}
+                {(activeTab === "file-upload" || activeTab === "database") && (
+                  <motion.div
+                    variants={item}
+                    className="bg-card/80 backdrop-blur-sm p-6 rounded-lg border border-border shadow-md"
+                  >
+                    <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center">
+                      <Settings className="w-5 h-5 mr-2 text-primary" />
+                      Processing Configuration
+                    </h3>
+                    <ChunkSizeConfig
+                      chunkSize={chunkSize}
+                      onChunkSizeChange={handleChunkSizeChange}
+                      disabled={isProcessing}
+                    />
+                  </motion.div>
+                )}
+
+                {/* Schema Viewer */}
+                {detectedSchema && (activeTab === "file-upload" || activeTab === "database") && (
+                  <motion.div
+                    variants={item}
+                    className="bg-card/80 backdrop-blur-sm p-6 rounded-lg border border-border shadow-md"
+                  >
+                    <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center">
+                      <Table className="w-5 h-5 mr-2 text-primary" />
+                      Detected Schema
+                    </h3>
+                    <SchemaViewer schema={detectedSchema} />
+                  </motion.div>
+                )}
               </motion.div>
             </div>
           </div>

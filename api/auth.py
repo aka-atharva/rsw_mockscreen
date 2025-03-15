@@ -83,6 +83,11 @@ def get_current_active_user(current_user: User = Depends(get_current_user)):
 
 def has_role(role: str):
     def role_checker(current_user: User = Depends(get_current_active_user)):
+        # Admin can access everything
+        if current_user.role == "admin":
+            return current_user
+            
+        # Otherwise check for the specific role
         if current_user.role != role:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
